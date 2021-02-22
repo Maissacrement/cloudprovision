@@ -1,0 +1,7 @@
+---
+all:
+    hosts:
+      # Here your hosted machine
+      machine0:
+        # Here is provide configuration of current machine
+...

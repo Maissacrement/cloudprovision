@@ -1,0 +1,52 @@
+---
+- hosts: all
+    
+- name: Run back container in cloud
+  hosts: machine0
+  vars:
+    #env: "{{ lookup('file', './.env').split('\n') }}"
+    # - name: test
+    # debug: msg="echo {{ item.split('=') }}"
+    # loop: "{{ env }}"
+
+  tasks:
+    - include_vars:
+        file: ./env.json
+        name: jsonenv
+
+    - name: test
+      debug: msg="echo {{ jsonenv | to_nice_json(indent=2) }}"
+
+    - name: Log into DockerHub
+      community.general.docker_login:
+        registry_url: "{{ jsonenv['GLOBAL']['registry'] }}"
+        username: "{{ jsonenv['DOCKER']['username'] }}"
+        password: "{{ jsonenv['DOCKER']['password'] }}"
+
+    - name: Launch docker compose in server
+      community.docker.docker_compose:
+        project_name: "{{ jsonenv['GLOBAL']['registytagname'] }}"
+        pull: yes
+        restarted: yes
+        nocache: yes
+        build: yes
+        definition:
+          version: '3.3'
+          services:
+            backend:
+              image: "{{ jsonenv['GLOBAL']['registry'] }}/{{ jsonenv['backend']['BACKEND_IMAGE'] }}"
+              ports: 
+                - "{{ jsonenv['backend']['APP_PORT'] }}:{{ jsonenv['backend']['APP_PORT_CONTAINER'] }}"
+              environment: "{{ jsonenv['backend'] }}"
+            front:
+              image: "{{ jsonenv['GLOBAL']['registry'] }}/{{ jsonenv['frontend']['FRONTEND_IMAGE'] }}"
+              ports: 
+                - "{{ jsonenv['frontend']['APP_PORT'] }}:{{ jsonenv['frontend']['APP_PORT_CONTAINER'] }}"
+              environment: "{{ jsonenv['frontend'] }}"
+              links:
+                - backend
+      register: output
+
+    - ansible.builtin.debug:
+        var: output
+...
