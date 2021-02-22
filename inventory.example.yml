@@ -4,4 +4,5 @@ all:
       # Here your hosted machine
       machine0:
         # Here is provide configuration of current machine
+        ansible_python_interpreter: /usr/bin/python3
 ...
